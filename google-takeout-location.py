@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import json, ipdb, httplib, urllib, sys
 from datetime import datetime
+import time
 from optparse import OptionParser
 
 print "####################################"
@@ -52,16 +53,23 @@ location_batches = [sorted_parsed_locations[x:x+batch_size] for x in xrange(0, l
 
 print str(datetime.utcnow()) + " posting location batches..."
 for i, location_batch in enumerate(location_batches):
-    print str(datetime.utcnow()) + " posting " + str(len(location_batch)) + " locations from " + str(location_batch[0]['timestamp']) + " onwards..."
-    # conn = httplib.HTTPConnection(host='localhost', port=3000)
-    conn = httplib.HTTPSConnection(host='memair.herokuapp.com', port=443)
-    headers = {"Content-type": "application/json"}
-    conn.request("POST", "/api/v1/bulk/locations", json.dumps({'json': location_batch, 'access_token': access_token}), headers)
-    content = conn.getresponse()
-    response = json.loads(content.read())
-    conn.close()
-    print response
-
+  for _ in range(0,100):
+    try:
+      print str(datetime.utcnow()) + " posting " + str(len(location_batch)) + " locations from " + str(location_batch[0]['timestamp']) + " onwards..."
+      # conn = httplib.HTTPConnection(host='localhost', port=3000)
+      conn = httplib.HTTPSConnection(host='memair.herokuapp.com', port=443)
+      headers = {"Content-type": "application/json"}
+      conn.request("POST", "/api/v1/bulk/locations", json.dumps({'json': location_batch, 'access_token': access_token}), headers)
+      content = conn.getresponse()
+      response = json.loads(content.read())
+      conn.close()
+      print response
+      break
+    except:
+      print "Unexpected error:", sys.exc_info()[0]
+      print "sleeping for 5 seconds and then retrying..."
+      time.sleep(5)
+      pass
 
 print content
 print str(datetime.utcnow()) + " done!"
