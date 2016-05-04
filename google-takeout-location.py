@@ -56,7 +56,7 @@ for i, location_batch in enumerate(location_batches):
   for _ in range(0,100):
     try:
       print str(datetime.utcnow()) + " posting " + str(len(location_batch)) + " locations from " + str(location_batch[0]['timestamp']) + " onwards..."
-      # conn = httplib.HTTPConnection(host='localhost', port=3000)
+    #   conn = httplib.HTTPConnection(host='localhost', port=3000)
       conn = httplib.HTTPSConnection(host='memair.herokuapp.com', port=443)
       headers = {"Content-type": "application/json"}
       conn.request("POST", "/api/v1/bulk/locations", json.dumps({'json': location_batch, 'access_token': access_token}), headers)
@@ -64,12 +64,15 @@ for i, location_batch in enumerate(location_batches):
       response = json.loads(content.read())
       conn.close()
       print response
-      break
+      if "bulk_import_id" in response:
+        break
     except:
       print "Unexpected error:", sys.exc_info()[0]
-      print "sleeping for 5 seconds and then retrying..."
-      time.sleep(5)
-      pass
+
+    print "sleeping for 5 seconds and then retrying..."
+    time.sleep(5)
+
+  time.sleep(30)
 
 print content
 print str(datetime.utcnow()) + " done!"
