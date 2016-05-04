@@ -74,5 +74,4 @@ for i, location_batch in enumerate(location_batches):
 
   time.sleep(30)
 
-print content
 print str(datetime.utcnow()) + " done!"
