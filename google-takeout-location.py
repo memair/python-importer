@@ -8,13 +8,16 @@ print "####################################"
 print "# Google Takeout Location Uploader #"
 print "####################################"
 
+source = 'google location services'
+batch_size = 1000
+sleep_between_batches = 5
+sleep_on_errors = 30
+
 parser = OptionParser()
 parser.add_option("-f", "--file", dest="filename", help="extracted LocationHistory.json file", metavar="FILE")
 (options, args) = parser.parse_args()
 
 access_token = raw_input("Access Token: ")
-source = 'google location services'
-batch_size = 1000
 
 print str(datetime.utcnow()) + " importing file..."
 with open(options.filename) as json_file:
@@ -69,9 +72,9 @@ for i, location_batch in enumerate(location_batches):
     except:
       print "Unexpected error:", sys.exc_info()[0]
 
-    print "sleeping for 5 seconds and then retrying..."
-    time.sleep(5)
+    print "sleeping for " + str(sleep_on_errors) + " seconds and then retrying..."
+    time.sleep(sleep_on_errors)
 
-  time.sleep(30)
+  time.sleep(sleep_between_batches)
 
 print str(datetime.utcnow()) + " done!"
