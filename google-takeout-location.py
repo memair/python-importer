@@ -9,8 +9,8 @@ print "# Google Takeout Location Uploader #"
 print "####################################"
 
 source = 'google location services'
-batch_size = 2000
-sleep_between_batches = 20
+batch_size = 1000
+sleep_between_batches = 30
 sleep_on_errors = 30
 
 parser = OptionParser()
