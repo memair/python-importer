@@ -1,7 +1,6 @@
 #!/usr/bin/python
-import json, ipdb, httplib, urllib, sys
+import json, ipdb, httplib, urllib, sys, pickle, time
 from datetime import datetime
-import time
 from optparse import OptionParser
 
 print "####################################"
@@ -10,7 +9,7 @@ print "####################################"
 
 source = 'google location services'
 batch_size = 1000
-sleep_between_batches = 30
+sleep_between_batches = 300
 sleep_on_errors = 30
 
 parser = OptionParser()
@@ -25,6 +24,20 @@ with open(options.filename) as json_file:
 locations = json_data['locations']
 locations_count = len(locations)
 print str(datetime.utcnow()) + " " + str(locations_count) + " locations retrieved, parsing locations..."
+
+def starting_position():
+  try:
+    f = open('store.pckl', 'rb')
+    return pickle.load(f)
+  except IOError:
+    return None
+
+starting_position = starting_position()
+
+if starting_position is None:
+  print str(datetime.utcnow()) + " starting from scratch"
+else:
+  print str(datetime.utcnow()) + " starting from " + str(starting_position)
 
 parsed_locations = []
 
@@ -46,7 +59,10 @@ for i, location in enumerate(locations):
   if 'accuracy' in location.keys():
     params['point_accuracy'] = str(location['accuracy'])
 
-  parsed_locations.append(params)
+  if starting_position < params['timestamp']:
+    parsed_locations.append(params)
+
+print str(datetime.utcnow()) + " " + str(len(parsed_locations)) + " locations parsed..."
 
 print str(datetime.utcnow()) + " sorting locations..."
 sorted_parsed_locations = sorted(parsed_locations, key=lambda k: k['timestamp'])
@@ -68,6 +84,9 @@ for i, location_batch in enumerate(location_batches):
       conn.close()
       print response
       if "bulk_import_id" in response:
+        f = open('store.pckl', 'wb')
+        pickle.dump(location_batch[-1]['timestamp'], f)
+        f.close()
         break
     except:
       print "Unexpected error:", sys.exc_info()[0]
@@ -78,3 +97,5 @@ for i, location_batch in enumerate(location_batches):
   time.sleep(sleep_between_batches)
 
 print str(datetime.utcnow()) + " done!"
+
+f.close()
