@@ -9,7 +9,7 @@ print "####################################"
 
 source = 'google location services'
 batch_size = 1000
-sleep_between_batches = 300
+sleep_between_batches = 30
 sleep_on_errors = 30
 
 parser = OptionParser()
