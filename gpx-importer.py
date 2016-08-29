@@ -8,7 +8,7 @@ print "######################"
 print "# GPX File Uploader #"
 print "######################"
 
-source = 'gpx tracks'
+source = 'gpx files'
 batch_size = 1000
 sleep_between_batches = 10
 sleep_on_errors = 30
@@ -44,6 +44,28 @@ for gpx_file_name in gpx_files:
     gpx_file = open(gpx_file_name, 'r')
     gpx = gpxpy.parse(gpx_file)
 
+    for waypoint in gpx.waypoints:
+        params = {
+            'latitude':       str(waypoint.latitude),
+            'longitude':      str(waypoint.longitude),
+            'timestamp':      str(waypoint.time),
+            'source':         source + " - waypoints"
+        }
+
+        if starting_position < params['timestamp']:
+            parsed_locations.append(params)
+
+    for route in gpx.routes:
+        params = {
+            'latitude':       str(route.latitude),
+            'longitude':      str(route.longitude),
+            'timestamp':      str(route.time),
+            'source':         source + " - routes"
+        }
+
+        if starting_position < params['timestamp']:
+            parsed_locations.append(params)
+
     for track in gpx.tracks:
         for segment in track.segments:
             for point in segment.points:
@@ -51,7 +73,7 @@ for gpx_file_name in gpx_files:
                     'latitude':       str(point.latitude),
                     'longitude':      str(point.longitude),
                     'timestamp':      str(point.time),
-                    'source':         source
+                    'source':         source + " - tracks"
                 }
 
                 if starting_position < params['timestamp']:
