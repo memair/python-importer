@@ -6,15 +6,19 @@ import urllib
 import sys
 import pickle
 import time
+import glob
 import logging
+import math
+import os
+import pandas as pd
 from datetime import datetime
 from optparse import OptionParser
 
-source = 'google location services'
+source = 'csv file'
 batch_size = 1000
 sleep_between_batches = 30
 sleep_on_errors = 30
-cache_file_name = 'google-takeout.pckl'
+cache_file_name = 'csv-importer.pckl'
 
 def starting_position():
     try:
@@ -25,58 +29,65 @@ def starting_position():
 
 # Set logging
 logging.basicConfig(stream=sys.stdout, format='%(asctime)s %(message)s', level=logging.INFO)
-logging.info("####################################")
-logging.info("# Google Takeout Location Importer #")
-logging.info("####################################")
+logging.info("#####################")
+logging.info("# CSV file Importer #")
+logging.info("#####################")
 
 # Get input params
 parser = OptionParser()
-parser.add_option("-f", "--file", dest="filename", help="extracted LocationHistory.json file", metavar="FILE")
+parser.add_option("-d", "--directory", dest="directory", help="directory including the csv files", metavar="FILE")
 (options, args) = parser.parse_args()
 access_token = raw_input("Access Token: ")
 
-logging.info("importing '" + options.filename + "'")
-with open(options.filename) as json_file:
-    json_data = json.load(json_file)
+logging.info("importing files from '" + options.directory + "'")
+csv_files = glob.glob(options.directory + "*.csv")
 
-locations = json_data['locations']
-locations_count = len(locations)
-logging.info(str(locations_count) + " locations retrieved, parsing locations...")
-
-if locations_count == 0:
-    logging.error("no locations found in '" + options.filename + "'")
+if len(csv_files) == 0:
+    logging.error("no csv files found in '" + options.filename + "'")
     logging.error("exiting!")
     sys.exit()
+
+logging.info(str(len(csv_files)) + " files retrieved, parsing locations...")
 
 # Calculating starting position
 starting_position = starting_position()
 if starting_position is None:
-    logging.info("starting from scratch...")
+    logging.info("starting from scratch")
 else:
-    logging.info("starting from " + str(starting_position + "..."))
-
+    logging.info("starting from " + str(starting_position))
 
 parsed_locations = []
-for i, location in enumerate(locations):
-    timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(location['timestampMs'])/1000.0))
-    latitude = location['latitudeE7'] * 0.0000001
-    longitude = location['longitudeE7'] * 0.0000001
+for csv_file_name in csv_files:
+    path, file_name = os.path.split(csv_file_name)
 
-    params = {
-        'latitude':  str(latitude),
-        'longitude': str(longitude),
-        'timestamp': str(timestamp),
-        'source':    source,
-    }
+    df = pd.read_csv(csv_file_name, sep=',',header=2)
+    column_names = df.columns.values
+    locations = df.values
+    for location in locations:
+        loc_dict = {column: field for column, field in zip (column_names, location)}
+        # The specific mapping will depend on your particular csv files
 
-    if 'activitys' in location.keys():
-        params['notes'] = json.dumps(location['activitys'], ensure_ascii=False)
+        params = {
+            'latitude':       str(loc_dict['Latitude (deg)']),
+            'longitude':      str(loc_dict['Longitude (deg)']),
+            'timestamp':      loc_dict['Time'],
+            'source':         source + " - " + file_name
+        }
 
-    if 'accuracy' in location.keys():
-        params['point_accuracy'] = str(location['accuracy'])
+        if not math.isnan(loc_dict['Accuracy (m)']):
+            params['accuracy'] = str(loc_dict['Accuracy (m)'])
 
-    if starting_position < params['timestamp']:
-        parsed_locations.append(params)
+        if not math.isnan(loc_dict['Bearing (deg)']):
+            params['heading'] = str(loc_dict['Bearing (deg)'])
+
+        if not math.isnan(loc_dict['Altitude (m)']):
+            params['altitude'] = str(loc_dict['Altitude (m)'])
+
+        if not math.isnan(loc_dict['Speed (m/s)']):
+            params['speed'] = str(loc_dict['Speed (m/s)'])
+
+        if starting_position < params['timestamp']:
+            parsed_locations.append(params)
 
 if len(parsed_locations) == 0:
     logging.info("no locations to send...")

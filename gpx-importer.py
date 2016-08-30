@@ -10,6 +10,7 @@ import gpxpy
 import gpxpy.gpx
 import glob
 import logging
+import os
 from datetime import datetime
 from optparse import OptionParser
 
@@ -17,7 +18,7 @@ source = 'gpx file'
 batch_size = 1000
 sleep_between_batches = 30
 sleep_on_errors = 30
-cache_file_name = 'gpx-tracks.pckl'
+cache_file_name = 'gpx-importer.pckl'
 
 def starting_position():
     try:
@@ -29,12 +30,12 @@ def starting_position():
 # Set logging
 logging.basicConfig(stream=sys.stdout, format='%(asctime)s %(message)s', level=logging.INFO)
 logging.info("#####################")
-logging.info("# GPX File Uploader #")
+logging.info("# GPX File Importer #")
 logging.info("#####################")
 
 # Get input params
 parser = OptionParser()
-parser.add_option("-d", "--directory", dest="directory", help="directory including gpx files", metavar="FILE")
+parser.add_option("-d", "--directory", dest="directory", help="directory including the gpx files", metavar="FILE")
 (options, args) = parser.parse_args()
 access_token = raw_input("Access Token: ")
 
@@ -42,7 +43,7 @@ logging.info("importing files from '" + options.directory + "'")
 gpx_files = glob.glob(options.directory + "*.gpx")
 
 if len(gpx_files) == 0:
-    logging.error("no gpx found in '" + options.filename + "'")
+    logging.error("no gpx files found in '" + options.filename + "'")
     logging.error("exiting!")
     sys.exit()
 
@@ -58,6 +59,8 @@ else:
 
 parsed_locations = []
 for gpx_file_name in gpx_files:
+    path, file_name = os.path.split(gpx_file_name)
+
     gpx_file = open(gpx_file_name, 'r')
     gpx = gpxpy.parse(gpx_file)
 
@@ -66,7 +69,7 @@ for gpx_file_name in gpx_files:
             'latitude':       str(waypoint.latitude),
             'longitude':      str(waypoint.longitude),
             'timestamp':      str(waypoint.time),
-            'source':         source + " - waypoints from " + gpx_file_name
+            'source':         source + " - waypoints from " + file_name
         }
 
         if starting_position < params['timestamp']:
@@ -122,7 +125,7 @@ for i, location_batch in enumerate(location_batches):
             content = conn.getresponse()
             response = json.loads(content.read())
             conn.close()
-            print response
+            logging.info(response)
             if "bulk_import_id" in response:
                 f = open(cache_file_name, 'wb')
                 pickle.dump(location_batch[-1]['timestamp'], f)
@@ -135,11 +138,10 @@ for i, location_batch in enumerate(location_batches):
                 logging.error("generate a valid token at https://memair.herokuapp.com/generate_own_access_token!")
                 sys.exit()
         except:
-            print "Unexpected error:", sys.exc_info()[0]
+            logging.error("Unexpected error:", sys.exc_info()[0])
 
         print "sleeping for " + str(sleep_on_errors) + " seconds and then retrying..."
         time.sleep(sleep_on_errors)
-
     time.sleep(sleep_between_batches)
 
 logging.info("done!")
