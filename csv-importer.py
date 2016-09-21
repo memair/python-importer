@@ -14,7 +14,6 @@ import pandas as pd
 from datetime import datetime
 from optparse import OptionParser
 
-source = 'csv file'
 batch_size = 1000
 sleep_between_batches = 30
 sleep_on_errors = 30
@@ -71,7 +70,7 @@ for csv_file_name in csv_files:
             'latitude':       str(loc_dict['Latitude (deg)']),
             'longitude':      str(loc_dict['Longitude (deg)']),
             'timestamp':      loc_dict['Time'],
-            'source':         source + " - " + file_name
+            'source':         file_name
         }
 
         if not math.isnan(loc_dict['Accuracy (m)']):

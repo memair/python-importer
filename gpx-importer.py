@@ -14,7 +14,6 @@ import os
 from datetime import datetime
 from optparse import OptionParser
 
-source = 'gpx file'
 batch_size = 1000
 sleep_between_batches = 30
 sleep_on_errors = 30
@@ -69,7 +68,7 @@ for gpx_file_name in gpx_files:
             'latitude':       str(waypoint.latitude),
             'longitude':      str(waypoint.longitude),
             'timestamp':      str(waypoint.time),
-            'source':         source + " - waypoints from " + file_name
+            'source':         file_name
         }
 
         if starting_position < params['timestamp']:
@@ -80,7 +79,7 @@ for gpx_file_name in gpx_files:
             'latitude':       str(route.latitude),
             'longitude':      str(route.longitude),
             'timestamp':      str(route.time),
-            'source':         source + " - routes from " + gpx_file_name
+            'source':         file_name
         }
 
         if starting_position < params['timestamp']:
@@ -93,7 +92,7 @@ for gpx_file_name in gpx_files:
                     'latitude':       str(point.latitude),
                     'longitude':      str(point.longitude),
                     'timestamp':      str(point.time),
-                    'source':         source + " - tracks from " + gpx_file_name
+                    'source':         file_name
                 }
 
                 if starting_position < params['timestamp']:
