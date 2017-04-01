@@ -1,4 +1,4 @@
-# Python-Importer for [Memair](http://Memair.com)
+# Python-Importer for [Memair](https://Memair.com)
 Example Python scripts for importing data into Memair.
 
 ## Google Takeout Location Importer
